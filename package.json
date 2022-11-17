@@ -13,7 +13,9 @@
     "bootstrap": "^5.2.2",
     "bootstrap-icons": "^1.10.2",
     "moment": "^2.29.4",
-    "vue": "^3.2.41"
+    "vee-validate": "^4.7.3",
+    "vue": "^3.2.41",
+    "yup": "^0.28.5"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.1.4",
