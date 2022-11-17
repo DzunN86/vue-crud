@@ -295,7 +295,7 @@ const deleteData = (id) => {
               <th class="th-tailwind">ACTION</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody v-if="filterData.length">
             <tr v-for="(item, index) in filterData" :key="item.id">
               <td class="td-tailwind">{{ index + 1 }}</td>
               <td class="td-tailwind">
@@ -337,6 +337,15 @@ const deleteData = (id) => {
                     @click="deleteData(item.id)"
                     class="w-5 h-5 text-red-500 cursor-pointer hover:opacity-80"
                   />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          <tbody v-else>
+            <tr>
+              <td class="td-tailwind" colspan="8">
+                <div class="flex justify-center items-center h-full">
+                  <span class="text-gray-500">👯 Data is empty</span>
                 </div>
               </td>
             </tr>
