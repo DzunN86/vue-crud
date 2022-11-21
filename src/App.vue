@@ -3,6 +3,7 @@ import { computed, reactive, watchEffect } from "vue";
 import { useDark, useToggle } from "@vueuse/core";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/vue/24/outline";
 import { SunIcon, MoonIcon } from "@heroicons/vue/24/solid";
+import BgGradient from "./components/BgGradient.vue";
 import moment from "moment";
 
 const bukuMama = reactive({
@@ -117,6 +118,7 @@ const deleteData = (id) => {
 
 <template>
   <div class="mx-auto w-full px-4 py-[50px] lg:max-w-[1440px]">
+    <BgGradient />
     <div class="mb-16 flex justify-between">
       <div>
         <h1 class="text-4xl font-semibold mb-4 dark:text-white">
@@ -191,10 +193,21 @@ const deleteData = (id) => {
                 <div
                   class="flex gap-2 items-center font-medium dark:text-white"
                 >
-                  <label for="status">Selesai</label>
+                  <label for="PENDING">Pending</label>
                   <input
                     type="radio"
-                    name="status"
+                    name="PENDING"
+                    value="PENDING"
+                    v-model="bukuMama.form.status"
+                  />
+                </div>
+                <div
+                  class="flex gap-2 items-center font-medium dark:text-white"
+                >
+                  <label for="SUCCESS">Selesai</label>
+                  <input
+                    type="radio"
+                    name="SUCCESS"
                     value="SUCCESS"
                     v-model="bukuMama.form.status"
                   />
@@ -202,10 +215,10 @@ const deleteData = (id) => {
                 <div
                   class="flex gap-2 items-center font-medium dark:text-white"
                 >
-                  <label for="status">Batalkan</label>
+                  <label for="CANCELED">Batalkan</label>
                   <input
                     type="radio"
-                    name="status"
+                    name="CANCELED"
                     value="CANCELED"
                     v-model="bukuMama.form.status"
                   />
