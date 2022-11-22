@@ -3,6 +3,8 @@ import { computed, reactive, watchEffect } from "vue";
 import { useDark, useToggle } from "@vueuse/core";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/vue/24/outline";
 import { SunIcon, MoonIcon } from "@heroicons/vue/24/solid";
+import { Form, Field, ErrorMessage } from "vee-validate";
+import * as Yup from "yup";
 import BgGradient from "./components/BgGradient.vue";
 import moment from "moment";
 
@@ -24,7 +26,11 @@ const bukuMama = reactive({
   },
 });
 
-const mutateBukuMama = () => {
+const mutateBukuMama = (values, { resetForm }) => {
+  alert(
+    `Berhasil ${bukuMama.mode} data dengan provider ${values.provider} dan nomor ${values.noHp}`
+  );
+
   if (bukuMama.mode === "Add") {
     bukuMama.data.unshift({
       id: Math.random(),
@@ -36,6 +42,7 @@ const mutateBukuMama = () => {
       catatan: bukuMama.form.catatan || "-",
     });
     // Reset
+    resetForm();
     initForm();
   } else {
     const index = bukuMama.data.findIndex(
@@ -52,6 +59,7 @@ const mutateBukuMama = () => {
       status: bukuMama.form.status,
     };
     // Reset
+    resetForm();
     initForm();
   }
 };
@@ -124,13 +132,28 @@ const filterData = computed(() => {
 // persist state
 watchEffect(() => {
   localStorage.setItem("bukuMama", JSON.stringify(bukuMama.data));
-  console.log(bukuMama.data);
 });
 
 const deleteData = (id) => {
   const index = bukuMama.data.findIndex((item) => item.id === id);
   bukuMama.data.splice(index, 1);
 };
+
+const schema = Yup.object().shape({
+  provider: Yup.string()
+    .required("Provider wajib diisi")
+    .typeError("Provider wajib diisi"),
+  noHp: Yup.string()
+    .min(10, "No HP minimal 10 karakter")
+    .max(13, "No HP maksimal 13 karakter")
+    .matches(/^[0-9]+$/, "No HP harus berupa angka")
+    .required("No HP wajib diisi")
+    .typeError("No HP harus berupa angka"),
+  nominal: Yup.number("Nominal harus berupa angka")
+    .required("Nominal wajib diisi")
+    .min(10000, "Beli minimal Rp 10.000")
+    .typeError("Nominal harus berupa angka"),
+});
 </script>
 
 <template>
@@ -158,41 +181,62 @@ const deleteData = (id) => {
           >
             📲 Beli Pulsa
           </h4>
-          <form class="flex flex-col gap-6" @submit.prevent="mutateBukuMama">
+          <Form
+            class="flex flex-col gap-6"
+            @submit="mutateBukuMama"
+            :validation-schema="schema"
+            v-slot="{ errors }"
+          >
             <div class="flex flex-col">
               <label for="PROVIDER" class="form-label required">PROVIDER</label>
-              <select
+              <Field
+                as="select"
                 class="form-select"
-                v-model="bukuMama.form.provider"
+                name="provider"
+                :class="{ 'is-invalid': errors.provider }"
                 aria-label="PROVIDER"
+                v-model="bukuMama.form.provider"
                 id="PROVIDER"
               >
-                <option value="null">Pilih Provider</option>
+                <option value="">Pilih Provider</option>
                 <option value="Telkomsel">Telkomsel</option>
                 <option value="IM3">IM3</option>
                 <option value="3">3</option>
                 <option value="Smartfren">Smartfren</option>
-              </select>
+              </Field>
+              <div class="invalid-feedback">
+                <ErrorMessage name="provider" />
+              </div>
             </div>
             <div class="flex flex-col">
               <label for="noHP" class="form-label required">NOMOR HP</label>
-              <input
+              <Field
                 class="form-control"
                 type="text"
                 id="noHP"
                 placeholder="Masukkan No.HP ..."
                 v-model="bukuMama.form.noHp"
+                name="noHp"
+                :class="{ 'is-invalid': errors.noHp }"
               />
+              <div class="invalid-feedback">
+                <ErrorMessage name="noHp" />
+              </div>
             </div>
             <div class="flex flex-col">
               <label for="nominal" class="form-label required">NOMIAL</label>
-              <input
+              <Field
                 class="form-control"
                 type="number"
                 id="nominal"
                 placeholder="Masukkan nominal..."
+                name="nominal"
                 v-model="bukuMama.form.nominal"
+                :class="{ 'is-invalid': errors.nominal }"
               />
+              <div class="invalid-feedback">
+                <ErrorMessage name="nominal" />
+              </div>
             </div>
             <div class="flex flex-col">
               <label for="catatan" class="form-label">CATATAN</label>
@@ -262,7 +306,7 @@ const deleteData = (id) => {
                 Batal
               </button>
             </div>
-          </form>
+          </Form>
         </div>
       </div>
       {{}}
@@ -394,21 +438,34 @@ const deleteData = (id) => {
 .text-pink {
   color: #ff217f;
 }
+
 .required::after {
   content: "*";
   color: red;
   padding-left: 0.5em;
 }
+
 table tr td,
 th {
   @apply dark:text-white;
 }
+
+.is-invalid {
+  @apply border-red-500 dark:border-red-500 focus:ring-red-500 !important;
+}
+
+.invalid-feedback {
+  @apply text-red-500 !important;
+}
+
 .thead-tailwind {
   @apply border-b-[1px] border-gray-200 dark:border-gray-700;
 }
+
 .th-tailwind {
   @apply py-5 px-3 font-semibold text-sm tracking-wide text-left;
 }
+
 .td-tailwind {
   @apply py-5 px-3 text-sm;
 }
@@ -419,7 +476,7 @@ th {
 
 .form-select,
 .form-control {
-  @apply border-2 border-gray-200 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-transparent;
+  @apply border-2 border-gray-200 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 dark:text-white focus:ring-2  focus:border-transparent;
 }
 
 .btn {
