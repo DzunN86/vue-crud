@@ -5,6 +5,7 @@ import { PencilSquareIcon, TrashIcon } from "@heroicons/vue/24/outline";
 import { SunIcon, MoonIcon } from "@heroicons/vue/24/solid";
 import { Form, Field, ErrorMessage } from "vee-validate";
 import * as Yup from "yup";
+import BgGradient from "./components/BgGradient.vue";
 import moment from "moment";
 
 const bukuMama = reactive({
@@ -19,9 +20,9 @@ const bukuMama = reactive({
   selected: {},
   mode: "Add",
   filter: {
+    previx: null,
     provider: "",
     status: "",
-    previx: null,
   },
 });
 
@@ -38,7 +39,7 @@ const mutateBukuMama = (values, { resetForm }) => {
       nominal: bukuMama.form.nominal,
       date: new Date().toISOString(),
       status: "PENDING",
-      catatan: bukuMama.form.catatan || "",
+      catatan: bukuMama.form.catatan || "-",
     });
     // Reset
     resetForm();
@@ -48,12 +49,14 @@ const mutateBukuMama = (values, { resetForm }) => {
       (item) => item.id === bukuMama.selected.id
     );
     bukuMama.data[index] = {
+      // untuk memasukkan data yang sudah ada (id, date)
       ...bukuMama.selected,
+
       provider: bukuMama.form.provider,
       noHp: bukuMama.form.noHp,
       nominal: bukuMama.form.nominal,
-      catatan: bukuMama.form.catatan || "",
-      status: bukuMama.form.status || "PENDING",
+      catatan: bukuMama.form.catatan || "-",
+      status: bukuMama.form.status,
     };
     // Reset
     resetForm();
@@ -61,10 +64,11 @@ const mutateBukuMama = (values, { resetForm }) => {
   }
 };
 
+// Kebutuhan untuk Darkmode
 const isDark = useDark();
 const toggleDark = useToggle(isDark);
 
-const useStatus = (status) => {
+const customStatus = (status) => {
   switch (status) {
     case "SUCCESS":
       return "bg-green-200 text-green-800";
@@ -81,9 +85,10 @@ const useStatus = (status) => {
 const initForm = () => {
   bukuMama.form = {
     provider: null,
-    noHp: "",
+    noHp: null,
     nominal: null,
     catatan: "",
+    status: "",
   };
   bukuMama.mode = "Add";
   bukuMama.selected = {};
@@ -92,21 +97,34 @@ const initForm = () => {
 // Filter Data
 const filterData = computed(() => {
   return bukuMama.data.filter((item) => {
+    // Filter Provider
+    // Cek apakah form filter provider tidak kosong
     if (bukuMama.filter.provider) {
+      // Jika tidak kosong, maka cek apakah provider item tidak sama dengan provider filter
       if (item.provider !== bukuMama.filter.provider) {
+        // Jika tidak sama, maka return false (data tidak akan ditampilkan)
         return false;
       }
     }
+    // Filter Status
+    // Cek apakah form filter status tidak kosong
     if (bukuMama.filter.status) {
+      // Jika tidak kosong, maka cek apakah status item tidak sama dengan status filter
       if (item.status !== bukuMama.filter.status) {
+        // Jika tidak sama, maka return false (data tidak akan ditampilkan)
         return false;
       }
     }
+    // Filter No HP
+    // Cek apakah form filter no hp tidak kosong
     if (bukuMama.filter.previx) {
+      // Jika tidak kosong, maka cek apakah no hp item tidak sama dengan no hp filter
       if (!item.noHp.startsWith(bukuMama.filter.previx)) {
+        // Jika tidak sama, maka return false (data tidak akan ditampilkan)
         return false;
       }
     }
+    // Jika semua kondisi diatas tidak terpenuhi, maka return true (data akan ditampilkan semua)
     return true;
   });
 });
@@ -140,6 +158,7 @@ const schema = Yup.object().shape({
 
 <template>
   <div class="mx-auto w-full px-4 py-[50px] lg:max-w-[1440px]">
+    <BgGradient />
     <div class="mb-16 flex justify-between">
       <div>
         <h1 class="text-4xl font-semibold mb-4 dark:text-white">
@@ -235,10 +254,21 @@ const schema = Yup.object().shape({
                 <div
                   class="flex gap-2 items-center font-medium dark:text-white"
                 >
-                  <label for="status">Selesai</label>
+                  <label for="PENDING">Pending</label>
                   <input
                     type="radio"
-                    name="status"
+                    name="PENDING"
+                    value="PENDING"
+                    v-model="bukuMama.form.status"
+                  />
+                </div>
+                <div
+                  class="flex gap-2 items-center font-medium dark:text-white"
+                >
+                  <label for="SUCCESS">Selesai</label>
+                  <input
+                    type="radio"
+                    name="SUCCESS"
                     value="SUCCESS"
                     v-model="bukuMama.form.status"
                   />
@@ -246,10 +276,10 @@ const schema = Yup.object().shape({
                 <div
                   class="flex gap-2 items-center font-medium dark:text-white"
                 >
-                  <label for="status">Batalkan</label>
+                  <label for="CANCELED">Batalkan</label>
                   <input
                     type="radio"
-                    name="status"
+                    name="CANCELED"
                     value="CANCELED"
                     v-model="bukuMama.form.status"
                   />
@@ -279,7 +309,8 @@ const schema = Yup.object().shape({
           </Form>
         </div>
       </div>
-      <div class="w-full">
+      {{}}
+      <div class="w-full overflow-x-auto">
         <div class="flex gap-5 mb-4 sticky-lg-top">
           <input
             type="text"
@@ -339,6 +370,7 @@ const schema = Yup.object().shape({
               <th class="th-tailwind">ACTION</th>
             </tr>
           </thead>
+          <!-- Jika filterData ada -->
           <tbody v-if="filterData.length">
             <tr v-for="(item, index) in filterData" :key="item.id">
               <td class="td-tailwind">{{ index + 1 }}</td>
@@ -359,7 +391,7 @@ const schema = Yup.object().shape({
               <td class="td-tailwind">
                 <span
                   :class="
-                    useStatus(item.status) +
+                    customStatus(item.status) +
                     ' py-1 px-2 text-[12px] rounded-xl font-semibold'
                   "
                 >
@@ -373,6 +405,7 @@ const schema = Yup.object().shape({
                     @click="
                       bukuMama.mode = 'edit';
                       bukuMama.selected = item;
+                      // Sprate Operator or Disctructuring
                       bukuMama.form = { ...item };
                     "
                     class="w-5 h-5 text-blue-500 cursor-pointer hover:opacity-80"
@@ -385,11 +418,12 @@ const schema = Yup.object().shape({
               </td>
             </tr>
           </tbody>
+          <!-- Kalau Kosong -->
           <tbody v-else>
             <tr>
               <td class="td-tailwind" colspan="8">
                 <div class="flex justify-center items-center h-full">
-                  <span class="text-gray-500">👯 Data is empty</span>
+                  <span class="text-gray-400 text-lg">👯 Data is empty</span>
                 </div>
               </td>
             </tr>
