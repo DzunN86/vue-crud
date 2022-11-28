@@ -4,7 +4,7 @@ import { useDark, useToggle } from "@vueuse/core";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/vue/24/outline";
 import { SunIcon, MoonIcon } from "@heroicons/vue/24/solid";
 import { Form, Field, ErrorMessage } from "vee-validate";
-import * as Yup from "yup";
+import { schema } from "./utils/schemaValidation";
 import BgGradient from "./components/BgGradient.vue";
 import moment from "moment";
 
@@ -27,23 +27,23 @@ const bukuMama = reactive({
 });
 
 const mutateBukuMama = (values, { resetForm }) => {
-  alert(
-    `Berhasil ${bukuMama.mode} data dengan provider ${values.provider} dan nomor ${values.noHp}`
-  );
-
+  console.log(values);
   if (bukuMama.mode === "Add") {
     bukuMama.data.unshift({
       id: Math.random(),
-      provider: bukuMama.form.provider,
-      noHp: bukuMama.form.noHp,
-      nominal: bukuMama.form.nominal,
+      provider: values.provider,
+      noHp: values.noHp,
+      nominal: values.nominal,
       date: new Date().toISOString(),
       status: "PENDING",
-      catatan: bukuMama.form.catatan || "-",
+      catatan: values.catatan || "-",
     });
+    alert(
+      `Berhasil ${bukuMama.mode} data dengan provider ${values.provider} dan nomor ${values.noHp}`
+    );
     // Reset
     resetForm();
-    initForm();
+    // initForm();
   } else {
     const index = bukuMama.data.findIndex(
       (item) => item.id === bukuMama.selected.id
@@ -51,7 +51,6 @@ const mutateBukuMama = (values, { resetForm }) => {
     bukuMama.data[index] = {
       // untuk memasukkan data yang sudah ada (id, date)
       ...bukuMama.selected,
-
       provider: bukuMama.form.provider,
       noHp: bukuMama.form.noHp,
       nominal: bukuMama.form.nominal,
@@ -93,6 +92,8 @@ const initForm = () => {
   bukuMama.mode = "Add";
   bukuMama.selected = {};
 };
+
+// sodiEffect
 
 // Filter Data
 const filterData = computed(() => {
@@ -138,22 +139,6 @@ const deleteData = (id) => {
   const index = bukuMama.data.findIndex((item) => item.id === id);
   bukuMama.data.splice(index, 1);
 };
-
-const schema = Yup.object().shape({
-  provider: Yup.string()
-    .required("Provider wajib diisi")
-    .typeError("Provider wajib diisi"),
-  noHp: Yup.string()
-    .min(10, "No HP minimal 10 karakter")
-    .max(13, "No HP maksimal 13 karakter")
-    .matches(/^[0-9]+$/, "No HP harus berupa angka")
-    .required("No HP wajib diisi")
-    .typeError("No HP harus berupa angka"),
-  nominal: Yup.number("Nominal harus berupa angka")
-    .required("Nominal wajib diisi")
-    .min(10000, "Beli minimal Rp 10.000")
-    .typeError("Nominal harus berupa angka"),
-});
 </script>
 
 <template>
@@ -191,9 +176,9 @@ const schema = Yup.object().shape({
               <label for="PROVIDER" class="form-label required">PROVIDER</label>
               <Field
                 as="select"
-                class="form-select"
                 name="provider"
                 :class="{ 'is-invalid': errors.provider }"
+                class="form-select"
                 aria-label="PROVIDER"
                 v-model="bukuMama.form.provider"
                 id="PROVIDER"
@@ -204,9 +189,7 @@ const schema = Yup.object().shape({
                 <option value="3">3</option>
                 <option value="Smartfren">Smartfren</option>
               </Field>
-              <div class="invalid-feedback">
-                <ErrorMessage name="provider" />
-              </div>
+              <ErrorMessage name="provider" class="invalid-feedback" />
             </div>
             <div class="flex flex-col">
               <label for="noHP" class="form-label required">NOMOR HP</label>
@@ -240,13 +223,14 @@ const schema = Yup.object().shape({
             </div>
             <div class="flex flex-col">
               <label for="catatan" class="form-label">CATATAN</label>
-              <textarea
+              <Field
+                as="textarea"
                 class="form-control"
-                id="catatan"
+                v-model="bukuMama.form.catatan"
+                name="catatan"
                 rows="3"
                 placeholder="Masukkan catatan..."
-                v-model="bukuMama.form.catatan"
-              ></textarea>
+              />
             </div>
             <div class="flex flex-col" v-if="bukuMama.mode === 'edit'">
               <label for="status" class="form-label">Status</label>
